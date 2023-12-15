@@ -29,17 +29,21 @@ class Server:
     def __init__(self, host, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind((host, port))
-        online_users = set()
+        self.online_users = set()
         self.sock.listen()
         self.accept_connections()
     
     def accept_connections(self):
+        #This function 
         thread = threading.Thread(target = self.accept_connections_thread)
         thread.start()
 
     def accept_connections_thread(self):
-        client_sock, _ = self.sock.accept()
-        listening_client_thread = threading.Thread(target =)
-    
-    def listening_client(self, client_sock):
-        pass
+        while True:
+            client_sock, _ = self.sock.accept()
+            listening_client_thread = threading.Thread(target = self.listen_client,
+                                                       args = (client_sock, ),
+                                                       daemon = True)
+            listening_client_thread.start()
+    def listen_client(self, client_sock):
+        lenght_msg = int.from_bytes(self.sock.recv(4), byteorder = "big")
