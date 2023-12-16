@@ -21,7 +21,7 @@ class Server:
 
     def accept_connections_thread(self):
         while True:
-            client_sock, (ip_client, port_client) = self.sock.accept()
+            client_sock, _ = self.sock.accept() #I use _ because the ip and port doesn't matter
             listening_client_thread = threading.Thread(target = self.listen_client,
                                                        args = (client_sock, ),
                                                        daemon = True)
@@ -50,6 +50,19 @@ class Server:
                 if target_user not in self.online_users:
                     error_msg = f"{target_user} is not online at this moment."
                     error_byte = error_msg.encode("utf-8")
-                    lenght = len(error_byte).to_bytes(length = 4, byteorder = "big")
-                    
-                    
+                    self.send(error_byte, client_sock)
+                else:
+                    msg = bytearray()
+                    while len(msg) < lenght_msg:
+                        lenght_recv = min(CHUNK_SIZE, lenght_msg - len(msg))
+                        msg.extend(self.sock.recv(lenght_recv))
+                    self.send(msg, self.online_users[target_user])
+        with self.lock_users:
+            del self.online_users[user]
+
+    def send(msg, target_sock):
+        lenght_msg = len(msg).to_bytes(length = 4, byteorder = "big")
+        full_msg = lenght_msg + msg
+        sended = 0
+        while sended < len(full_msg):
+            sended += target_sock.send(full_msg[sended:])
